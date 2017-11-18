@@ -1,0 +1,133 @@
+---
+title: "M3_ActividadColaborativa"
+author: "Alberto Granero García"
+date: "18 de noviembre de 2017"
+output:   
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+#Comprobamos el directorio actual.
+```
+getwd()
+```
+#Verificamos si existe el directorio deseado, si no lo generamos
+```
+if(!file.exists("C:/ActividadColaborativa/Modulo3")){
+  dir.create("C:/ActividadColaborativa/Modulo3")
+}
+```
+#Establecemos directorio deseado
+```
+setwd("C:/ActividadColaborativa/Modulo3")
+```
+#Nos cercioramos de su limpieza.
+```
+rm(list=ls())
+```
+#Nos aseguramos de estar en el directorio deseado
+```
+getwd()
+```
+#Creamos el espacio de datos
+```
+if(!file.exists("./datos")){
+  dir.create("./datos")
+}
+```
+#Instalamos el paquete deseado, despues de análizar que es necesario
+```
+if (! "knitr" %in% installed.packages()) {
+  install.packages("knitr", dependencies = TRUE)
+}
+if (! "reshape" %in% installed.packages()) {
+  install.packages("reshape", dependencies = TRUE)
+}
+```
+#Activamos el paquete necesario
+```
+library("knitr")
+library("reshape")
+```
+#Descargamos el fichero.
+```
+fileurl <-"http://queseguros.com/users.csv"
+download.file(fileurl,destfile = "./datos/users.csv")
+```
+#Generamos fecha de última descarga.
+```
+fechadescarga=date()
+fechadescarga
+```
+#Comprobamos que tenemos el archivo en dicho escritorio
+```
+list.files("./datos")
+```
+#Leemos y observamos el dataFrame de datos.
+```
+subscriptores<-read.csv("./datos/users.csv", header=TRUE)
+View(subscriptores)
+```
+#Pequeño resumen del conjunto de datos
+```
+summary(subscriptores)
+```
+#Veo valor de las columnas
+```
+names(subscriptores)
+```
+#Suprimimos "__c" y "CJ"de todos los campos(columnas).
+```
+names(subscriptores)<- gsub("__c","",names(subscriptores))
+names(subscriptores)<- gsub("CJ","",names(subscriptores))
+```
+#Tratamiento de Datetime.
+#Suprimo valor "#N/A" que indica registro vacío.
+#Suprimo "T00:00:00" siempre es nulo.
+```
+subscriptores$LastInvoiceDate<- gsub("T00:00:00","", subscriptores$LastInvoiceDate)
+subscriptores$EnergyCutOffDate<- gsub("T00:00:00","", subscriptores$EnergyCutOffDate)
+subscriptores$AgreementCutOffDate<- gsub("T00:00:00","", subscriptores$AgreementCutOffDate)
+subscriptores$ModelExecutionDate<- gsub("T00:00:00","", subscriptores$ModelExecutionDate)
+subscriptores$LastInvoiceDate<- gsub("#N/A","", subscriptores$LastInvoiceDate)
+subscriptores$EnergyCutOffDate<- gsub("#N/A","", subscriptores$EnergyCutOffDate)
+subscriptores$AgreementCutOffDate<- gsub("#N/A","", subscriptores$AgreementCutOffDate)
+subscriptores$ModelExecutionDate<- gsub("#N/A","", subscriptores$ModelExecutionDate)
+```
+#Generamos un segundo DataFrame del primero
+```
+subscriptores2 <- subscriptores
+```
+#Eliminamos columna final "ModelExecutionData" por solo disponer de un único valor.
+```
+subscriptores2 <- subscriptores2[,-15]
+```
+#Ordenamos por campos "PaymentProbability", "Suggestion1" y "Suggestion2"
+```
+subscriptores2$Suggestion1 <- as.character(subscriptores2$Suggestion1)
+subscriptores2$Suggestion2 <- as.character(subscriptores2$Suggestion2)
+subscriptores2 <- subscriptores2[order(subscriptores2$PaymentProbability,decreasing = TRUE), ]
+```
+#Modifico nombre campos "Suggestion1" y "Suggestion2" para mas claridad
+```
+subscriptores2 = rename(subscriptores2,c(Suggestion1="FirstProbabilityAction",Suggestion2="SecondProbabilityAction"))
+```
+#Creamos si no existe y escribimos el tidy dataset.
+```
+if (!file.exists("./datos/outfile")) {
+  dir.create("./datos/outfile")
+}
+write.csv2(subscriptores2,file="./datos/outfile/subscriptoresOut.csv")
+```
+#Comprobamos.
+```
+subscriptoresOut <- read.csv2("./datos/outfile/subscriptoresOut.csv")
+head(subscriptoresOut)
+list.files("./datos/outfile")
+```
